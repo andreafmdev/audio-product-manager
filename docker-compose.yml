@@ -1,40 +1,213 @@
-# PostgreSQL development database
+# ═══════════════════════════════════════════════════
+# Docker Compose Configuration
+# Best practice: usa version 3.8+ per supporto completo a profili e healthcheck
+# ═══════════════════════════════════════════════════
+version: '3.8'
+
 services:
+  # ═══════════════════════════════════════════════════
+  # PostgreSQL - Development Environment
+  # Database locale per sviluppo con persistenza dei dati
+  # ═══════════════════════════════════════════════════
   postgresql-dev:
     container_name: postgresql-dev
-    image: postgres:latest
+    # Best practice: usa tag specifici invece di 'latest' per riproducibilità
+    # postgres:16-alpine è più leggero e sicuro di postgres:latest
+    image: postgres:16-alpine
+    # Best practice: unless-stopped mantiene il container attivo dopo riavvio Docker
     restart: unless-stopped
+    # Profili: definiscono quando il servizio viene avviato
+    # 'dev': attivo solo in sviluppo
+    # 'all': attivo quando si avviano tutti i profili
+    profiles:
+      - dev
+      - all
+    # Mappatura porte: host:container
+    # Best practice: usa porte non standard per evitare conflitti
     ports:
-      - "15432:5432/tcp"
+      - "15432:5432"
+    # Variabili d'ambiente per configurazione database
+    # Best practice: usa ${VAR:-default} per valori di fallback
     environment:
-      - POSTGRES_DB=db-dev
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
+      POSTGRES_DB: ${DATABASE_NAME:-db-dev}
+      POSTGRES_USER: ${DATABASE_USER:-postgres}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-postgres}
+    # Volume per persistenza dati
+    # Best practice: usa named volumes invece di bind mounts per produzione
     volumes:
-      - ./postgresql_volume:/var/lib/postgresql/data:rw,Z
-    stdin_open: true
-    tty: true
+      - postgresql_dev_data:/var/lib/postgresql/data
+    # Rete isolata per comunicazione tra servizi
     networks:
-      - postgres
+      - app-network
+    # Healthcheck: verifica che il database sia pronto
+    # Best practice: sempre definire healthcheck per dipendenze critiche
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
-  postgresql-test-e2e:
-    container_name: postgresql-test-e2e
-    image: postgres:latest
+  # ═══════════════════════════════════════════════════
+  # PostgreSQL - Test E2E Environment
+  # Database isolato per test end-to-end
+  # ═══════════════════════════════════════════════════
+  postgresql-test:
+    container_name: postgresql-test
+    image: postgres:16-alpine
     restart: unless-stopped
+    profiles:
+      - test
+      - all
     ports:
-      - "25432:5432/tcp"
+      - "25432:5432"
     environment:
-      - POSTGRES_DB=db-test-e2e
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
-    stdin_open: true
-    tty: true
+      POSTGRES_DB: ${DATABASE_NAME:-db-test-e2e}
+      POSTGRES_USER: ${DATABASE_USER:-postgres}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-postgres}
+    # Best practice: volume separato per test per isolamento completo
+    volumes:
+      - postgresql_test_data:/var/lib/postgresql/data
     networks:
-      - postgres
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
 
+  # ═══════════════════════════════════════════════════
+  # PostgreSQL - Quality Assurance Environment
+  # Database per ambiente di pre-produzione
+  # ═══════════════════════════════════════════════════
+  postgresql-qual:
+    container_name: postgresql-qual
+    image: postgres:16-alpine
+    restart: unless-stopped
+    profiles:
+      - qual
+      - all
+    ports:
+      - "35432:5432"
+    environment:
+      POSTGRES_DB: ${DATABASE_NAME:-db-qual}
+      POSTGRES_USER: ${DATABASE_USER:-postgres}
+      POSTGRES_PASSWORD: ${DATABASE_PASSWORD:-postgres}
+    volumes:
+      - postgresql_qual_data:/var/lib/postgresql/data
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  # ═══════════════════════════════════════════════════
+  # NestJS Application - Development
+  # Servizio applicativo per sviluppo locale con hot-reload
+  # ═══════════════════════════════════════════════════
+  app-dev:
+    # Build dell'immagine dallo stage 'builder' del Dockerfile
+    # Best practice: usa target specifico per sviluppo (include devDependencies)
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: builder
+    container_name: nestjs-app-dev
+    restart: unless-stopped
+    profiles:
+      - dev
+      - all
+    ports:
+      - "3000:3000"
+    # Variabili d'ambiente per sviluppo
+    # Best practice: passa configurazioni sensibili tramite .env, non hardcoded
+    environment:
+      NODE_ENV: development
+      # Best practice: usa nome servizio Docker per hostname database
+      DATABASE_HOST: postgresql-dev
+      DATABASE_PORT: 5432
+      DATABASE_NAME: ${DATABASE_NAME:-db-dev}
+      DATABASE_USER: ${DATABASE_USER:-postgres}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD:-postgres}
+      AUTH_PROVIDER: ${AUTH_PROVIDER:-keycloak}
+      KEYCLOAK_AUTH_SERVER_URL: ${KEYCLOAK_AUTH_SERVER_URL}
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM}
+      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID}
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
+    # Dipendenza: aspetta che il database sia healthy prima di avviare
+    # Best practice: usa condition: service_healthy per startup ordinato
+    depends_on:
+      postgresql-dev:
+        condition: service_healthy
+    networks:
+      - app-network
+    # Volumi per hot-reload in sviluppo
+    # Best practice: mount del codice sorgente solo in dev, mai in produzione
+    volumes:
+      - ./src:/app/src
+      - ./node_modules:/app/node_modules
+
+  # ═══════════════════════════════════════════════════
+  # NestJS Application - Production
+  # Servizio applicativo ottimizzato per produzione
+  # ═══════════════════════════════════════════════════
+  app-prod:
+    # Build dallo stage 'production' (solo dipendenze prod)
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: production
+    container_name: nestjs-app-prod
+    restart: unless-stopped
+    profiles:
+      - prod
+      - all
+    ports:
+      - "3000:3000"
+    environment:
+      NODE_ENV: production
+      # Best practice: in produzione usa variabili d'ambiente esterne
+      DATABASE_HOST: ${DATABASE_HOST}
+      DATABASE_PORT: ${DATABASE_PORT:-5432}
+      DATABASE_NAME: ${DATABASE_NAME}
+      DATABASE_USER: ${DATABASE_USER}
+      DATABASE_PASSWORD: ${DATABASE_PASSWORD}
+      AUTH_PROVIDER: ${AUTH_PROVIDER:-keycloak}
+      KEYCLOAK_AUTH_SERVER_URL: ${KEYCLOAK_AUTH_SERVER_URL}
+      KEYCLOAK_REALM: ${KEYCLOAK_REALM}
+      KEYCLOAK_CLIENT_ID: ${KEYCLOAK_CLIENT_ID}
+      KEYCLOAK_CLIENT_SECRET: ${KEYCLOAK_CLIENT_SECRET}
+    networks:
+      - app-network
+    # Healthcheck per monitoraggio applicazione
+    # Best practice: verifica endpoint /health per readiness probe
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/api/v1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+# ═══════════════════════════════════════════════════
+# Volumes
+# Best practice: named volumes per persistenza dati isolata per ambiente
+# ═══════════════════════════════════════════════════
 volumes:
-  postgresql_volume:
+  postgresql_dev_data:
+    driver: local
+  postgresql_test_data:
+    driver: local
+  postgresql_qual_data:
+    driver: local
 
+# ═══════════════════════════════════════════════════
+# Networks
+# Best practice: rete isolata per comunicazione tra servizi
+# ═══════════════════════════════════════════════════
 networks:
-  postgres:
+  app-network:
     driver: bridge

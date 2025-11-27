@@ -1,17 +1,76 @@
-FROM node:22-alpine
+# ═══════════════════════════════════════════════════
+# Multi-stage Dockerfile per NestJS
+# Best practice: separa build da runtime per immagini più piccole e sicure
+# ═══════════════════════════════════════════════════
 
+# ═══════════════════════════════════════════════════
+# Stage 1: Builder
+# Utilizzato per compilare l'applicazione con tutte le dipendenze
+# ═══════════════════════════════════════════════════
+FROM node:22-alpine AS builder
+
+# Imposta la directory di lavoro
+# Best practice: usa path assoluti espliciti
 WORKDIR /app
 
-COPY package*.json ./
+# Copia solo i file di dipendenze per sfruttare la cache di Docker
+# Best practice: copia package.json prima del codice sorgente per cache layer
+COPY package.json pnpm-lock.yaml* ./
 
-RUN pnpm ci --ignore-scripts
+# Abilita e prepara pnpm tramite corepack (incluso in Node.js 22+)
+# Best practice: usa corepack invece di installare pnpm manualmente
+RUN corepack enable && corepack prepare pnpm@latest --activate
 
+# Installa tutte le dipendenze (dev + prod)
+# --frozen-lockfile: garantisce che il lockfile sia rispettato
+# --ignore-scripts: evita l'esecuzione di script potenzialmente problematici durante il build
+RUN pnpm ci --frozen-lockfile --ignore-scripts
+
+# Copia il resto del codice sorgente
+# Best practice: copia il codice dopo le dipendenze per ottimizzare la cache
 COPY . .
 
-ENV NODE_ENV=production
-
+# Compila l'applicazione TypeScript
+# Best practice: il build avviene in un layer separato per facilitare il debug
 RUN pnpm run build
 
+# ═══════════════════════════════════════════════════
+# Stage 2: Production
+# Immagine finale ottimizzata con solo runtime necessario
+# ═══════════════════════════════════════════════════
+FROM node:22-alpine AS production
+
+# Imposta la directory di lavoro
+WORKDIR /app
+
+# Abilita pnpm per l'installazione delle dipendenze di produzione
+RUN corepack enable && corepack prepare pnpm@latest --activate
+
+# Copia i file di dipendenze
+COPY package.json pnpm-lock.yaml* ./
+
+# Installa SOLO le dipendenze di produzione
+# Best practice: --prod installa solo dependencies, non devDependencies
+# Questo riduce significativamente la dimensione dell'immagine finale
+RUN pnpm ci --frozen-lockfile --prod --ignore-scripts
+
+# Copia i file compilati dallo stage builder
+# Best practice: copia solo ciò che è necessario per il runtime
+COPY --from=builder /app/dist ./dist
+
+# Copia eventuali file generati da Prisma (se presenti)
+# Il 2>/dev/null || true evita errori se la directory non esiste
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma 2>/dev/null || true
+
+# Imposta variabili d'ambiente di produzione
+# Best practice: usa ENV per variabili che non cambiano spesso
+ENV NODE_ENV=production
+
+# Espone la porta su cui l'applicazione ascolta
+# Best practice: documenta sempre le porte esposte
 EXPOSE 3000
 
-CMD ["sh", "-c", "npm run schema:update && npm run migrate:up && npm run start:prod"]
+# Comando di avvio dell'applicazione
+# Esegue migrazioni e schema update prima di avviare l'app
+# Best practice: usa array syntax per evitare problemi con shell
+CMD ["sh", "-c", "pnpm run schema:update && pnpm run migrate:up && pnpm run start:prod"]

@@ -7,6 +7,8 @@ import {
   MikroOrmHealthIndicator,
 } from '@nestjs/terminus';
 import { PublicApi } from '../../../../../libs/decorator/auth.decorator';
+import { AuthenticatedUser, Roles } from 'nest-keycloak-connect';
+import { KeycloakRole } from '@/libs/api/api-role.enum';
 
 @Controller({
   path: 'health',
@@ -31,5 +33,10 @@ export class HealthController {
         this.disk.checkStorage('storage', { path: '/', thresholdPercent: 0.8 }),
       //() => this.memory.checkHeap('memory', 750 * 1024 * 1024),
     ]);
+  }
+  @Get()
+  @Roles({ roles: [KeycloakRole.ADMIN] })
+  getUsers(@AuthenticatedUser() user) {
+    return user;
   }
 }

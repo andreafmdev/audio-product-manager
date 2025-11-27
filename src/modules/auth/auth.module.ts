@@ -1,37 +1,86 @@
-import { Module } from '@nestjs/common';
+// src/modules/auth/auth.module.ts
+import { Module, DynamicModule, Global, Logger } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
-import { JwtService } from './infrastructure/jwt/jwt.service';
-import { AuthGuard } from './api/guard/auth.guard';
-import { AuthController } from './api/rest/controller/auth.controller';
+import { ConfigModule } from '@nestjs/config';
+import { PassportModule } from '@nestjs/passport';
 import {
-  JWT_AUTH_SERVICE,
-  LOGIN_USE_CASE,
-  SIGNUP_USE_CASE,
-} from './auth.tokens';
-import { LoginUseCase } from './application/use-case/login.use-case';
-import { SignupUseCase } from './application/use-case/signup.use-case';
+  KeycloakConnectModule,
+  AuthGuard as KeycloakAuthGuard,
+  RoleGuard as KeycloakRoleGuard,
+} from 'nest-keycloak-connect';
+import { KeycloakConfigService } from './infrastructure/keycloak/keycloak-config.service';
+import { SupabaseStrategy } from './strategies/supabase.strategy';
+import { SupabaseAuthGuard } from './guards/supabase-auth.guard';
+import { AuthProvider } from './providers/auth-provider.enum';
+import { SupabaseRoleGuard } from './guards/supabase-role.guard';
 
-@Module({
-  imports: [],
-  controllers: [AuthController],
-  providers: [
-    {
-      provide: APP_GUARD,
-      useClass: AuthGuard,
-    },
-    {
-      provide: JWT_AUTH_SERVICE,
-      useClass: JwtService,
-    },
-    {
-      provide: LOGIN_USE_CASE,
-      useClass: LoginUseCase,
-    },
-    {
-      provide: SIGNUP_USE_CASE,
-      useClass: SignupUseCase,
-    },
-  ],
-  exports: [],
-})
-export class AuthModule {}
+@Global()
+@Module({})
+export class AuthModule {
+  private static readonly logger = new Logger(AuthModule.name);
+
+  static forRoot(): DynamicModule {
+    const provider =
+      (process.env.AUTH_PROVIDER as AuthProvider) || AuthProvider.KEYCLOAK;
+
+    this.logger.log(`Initializing AuthModule with provider: ${provider}`);
+
+    switch (provider) {
+      case AuthProvider.KEYCLOAK:
+        return this.forKeycloak();
+      case AuthProvider.SUPABASE:
+        return this.forSupabase();
+      default:
+        throw new Error(
+          `Unsupported auth provider: ${provider}. Supported: ${Object.values(AuthProvider).join(', ')}`,
+        );
+    }
+  }
+
+  private static forKeycloak(): DynamicModule {
+    return {
+      module: AuthModule,
+      imports: [
+        ConfigModule,
+        KeycloakConnectModule.registerAsync({
+          imports: [ConfigModule],
+          useClass: KeycloakConfigService,
+        }),
+      ],
+      providers: [
+        KeycloakConfigService,
+        {
+          provide: APP_GUARD,
+          useClass: KeycloakAuthGuard,
+        },
+        {
+          provide: APP_GUARD,
+          useClass: KeycloakRoleGuard,
+        },
+      ],
+      exports: [],
+    };
+  }
+
+  private static forSupabase(): DynamicModule {
+    return {
+      module: AuthModule,
+      imports: [
+        ConfigModule,
+        PassportModule.register({ defaultStrategy: 'supabase' }),
+      ],
+      providers: [
+        SupabaseStrategy,
+        {
+          provide: APP_GUARD,
+          useClass: SupabaseAuthGuard,
+        },
+        {
+          provide: APP_GUARD,
+          useClass: SupabaseRoleGuard,
+        },
+      ],
+      exports: [],
+    };
+  }
+}

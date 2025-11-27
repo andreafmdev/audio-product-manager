@@ -26,6 +26,11 @@
     "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noImplicitReturns": true,
-    "resolveJsonModule": true
+    "resolveJsonModule": true,
+    "paths": {
+      "@modules/*": ["src/modules/*"],
+      "@/*": ["src/*"],
+      "@auth/*": ["src/modules/auth/*"],
+    }
   }
 }

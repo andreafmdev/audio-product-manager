@@ -9,12 +9,11 @@ import { EventEmitterModule } from '@nestjs/event-emitter';
 import { ScheduleModule } from '@nestjs/schedule';
 import { UserModule } from './modules/user/user.module';
 import { HealthModule } from './modules/health/health.module';
-import { AuthModule } from './modules/auth/auth.module';
 import { CqrsModule } from '@nestjs/cqrs';
 import { CommunicationModule } from './modules/communication/communication.module';
 import { GraphQLModule } from '@nestjs/graphql';
 import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
-
+import { AuthModule } from './modules/auth/auth.module';
 @Module({
   imports: [
     HttpModule,
@@ -51,8 +50,8 @@ import { ApolloDriver, ApolloDriverConfig } from '@nestjs/apollo';
     ScheduleModule.forRoot(),
     HealthModule,
     UserModule,
-    AuthModule,
     CommunicationModule,
+    AuthModule.forRoot(),
   ],
   controllers: [],
   providers: [],

@@ -16,17 +16,19 @@
 [![GitHub Repo stars](https://img.shields.io/github/stars/andrea-acampora/nestjs-ddd-devops?style=flat&color=yellow&logo=github)](https://github.com/andrea-acampora/nestjs-ddd-devops/stargazers)
 [![GitHub contributors](https://img.shields.io/github/contributors/andrea-acampora/nestjs-ddd-devops?color=orange&logo=github)](https://github.com/andrea-acampora/nestjs-ddd-devops/graphs/contributors)
 
-The purpose of this [repository](https://github.com/andrea-acampora/nestjs-ddd-devops) is to create a ready-to-use project following _Domain-Driven Design_, _Clean
-Architecture_ and _Functional Programming_ best practices combined with some _DevOps_ techniques such as _Continuous
-Integration_, _Continuous Delivery_ and _Quality Assurance_.
+The purpose of this [repository](https://github.com/andrea-acampora/nestjs-ddd-devops) is to create a ready-to-use project following _Domain-Driven Design_, _Clean Architecture_ and _Functional Programming_ best practices combined with some _DevOps_ techniques such as _Continuous Integration_, _Continuous Delivery_ and _Quality Assurance_.
 
 **Key Features**: 
 - **Modular Monolith Architecture** with clear domain boundaries
+- **Multi-Provider Authentication** (Keycloak & Supabase) with dynamic selection
+- **Fastify HTTP Adapter** for high-performance request handling
+- **GraphQL Support** with Apollo Server and Fastify integration
+- **Docker Multi-Stage Build** with environment profiles (dev, test, qual, prod)
 - **Test-Driven Development** with _Jest_ and _Supertest_
 - **Automated CI/CD** via _GitHub Actions_
 - **Semantic Versioning** & **Conventional Commits**
 - **Rate Limiting**, **Caching**, **Data Validation** and **API Versioning**
-- **Dockerized environment** with _PostgreSQL_
+- **pnpm** as package manager for efficient dependency management
 
 The project is completely open source under the **MIT** license, feel free to contribute by opening
 an [issue](https://github.com/andrea-acampora/nestjs-ddd-devops/issues/new/choose),
@@ -39,49 +41,121 @@ In the following chapters you will find a description of the main choices, techn
 
 ## Stack
 
-| NodeJS    | TypeScript | NestJS |  PostgreSQL   | Mikro-ORM  | Docker |
-| :---:     | :----:     | :---:  |  :---:        | :----:     | :---:  |
-| [<img src="https://deviconapi.vercel.app/nodejs?color=83CD29ff&size=75" alt="NodeJS Logo"/>](https://nodejs.org/en) | [<img src="https://deviconapi.vercel.app/typescript?color=007ACCFF&size=75" alt="TypeScript Logo" />](https://www.typescriptlang.org) | [<img src="https://deviconapi.vercel.app/nestjs?color=DF234FFF&size=75" alt="NestJS Logo"/>](https://nestjs.com)  | [<img src="https://deviconapi.vercel.app/postgresql?version=plain&color=336791FF&size=75" alt="PostgreSQL Logo" />](https://www.postgresql.org) | [<img src="https://avatars.githubusercontent.com/u/54766168?s=200&v=4" width="75" alt="Mikro-ORM logo" />](https://mikro-orm.io) | [<img src="https://deviconapi.vercel.app/docker?color=019BC6FF&size=75" alt="Docker Logo" />](https://www.docker.com) |
+| NodeJS    | TypeScript | NestJS |  PostgreSQL   | Mikro-ORM  | Docker | Fastify |
+| :---:     | :----:     | :---:  |  :---:        | :----:     | :---:  | :---:   |
+| [<img src="https://deviconapi.vercel.app/nodejs?color=83CD29ff&size=75" alt="NodeJS Logo"/>](https://nodejs.org/en) | [<img src="https://deviconapi.vercel.app/typescript?color=007ACCFF&size=75" alt="TypeScript Logo" />](https://www.typescriptlang.org) | [<img src="https://deviconapi.vercel.app/nestjs?color=DF234FFF&size=75" alt="NestJS Logo"/>](https://nestjs.com)  | [<img src="https://deviconapi.vercel.app/postgresql?version=plain&color=336791FF&size=75" alt="PostgreSQL Logo" />](https://www.postgresql.org) | [<img src="https://avatars.githubusercontent.com/u/54766168?s=200&v=4" width="75" alt="Mikro-ORM logo" />](https://mikro-orm.io) | [<img src="https://deviconapi.vercel.app/docker?color=019BC6FF&size=75" alt="Docker Logo" />](https://www.docker.com) | [<img src="https://deviconapi.vercel.app/fastify?color=000000&size=75" alt="Fastify Logo" />](https://www.fastify.io) |
 
-## Instructions
-1. Fork this repository and use it as ```template``` repository
-2. Install all dependencies
-     ```bash
-     npm install
-     ```
-3. Start the _PostgreSQL_ development database in a local container
-    ```bash
-     docker-compose up -d
-     ```
-4. Provide a ```.env``` and ```.env.test```  files with all required environment variables _(check out ```.env.dist``` example file)_
-5. Create and generate the database schema from your entities' metadata:
-     ```bash
-     npm run schema:update
-     ```
-6. Start to create your modules and entities following all the principles explained in the below chapters!
+## Quick Start
+
+### Prerequisites
+
+- **Node.js** 20.x or 22.x
+- **pnpm** 8.x or higher (install via `npm install -g pnpm` or `corepack enable`)
+- **Docker** and **Docker Compose** (for database and containerized development)
+- **PostgreSQL** (or use Docker Compose)
+
+### Installation
+
+1. **Fork this repository** and use it as a ```template``` repository
+
+2. **Clone your fork:**
+   ```bash
+   git clone https://github.com/your-username/nestjs-ddd-devops.git
+   cd nestjs-ddd-devops
+   ```
+
+3. **Install dependencies:**
+   ```bash
+   pnpm install
+   ```
+
+4. **Start the PostgreSQL development database:**
+   ```bash
+   docker-compose --profile dev up -d postgresql-dev
+   ```
+   
+   For detailed Docker setup, see [Docker Configuration Guide](./DockerProcedure.md).
+
+5. **Create environment files:**
+   ```bash
+   cp .env.example .env
+   cp .env.example .env.test
+   ```
+   
+   Configure the `.env` file with your settings (see [Environment Variables](#environment-variables)).
+
+6. **Create database schema:**
+   ```bash
+   pnpm run schema:update
+   ```
+
+7. **Run database migrations:**
+   ```bash
+   pnpm run migrate:up
+   ```
+
+8. **Start the development server:**
+   ```bash
+   pnpm run start:dev
+   ```
+
+The application will be available at `http://localhost:3000`.
+
+### Docker Quick Start
+
+For a complete containerized setup, see the comprehensive [Docker Configuration Guide](./DockerProcedure.md).
+
+**Quick commands:**
+```bash
+# Development environment
+docker-compose --profile dev up -d
+
+# Test environment
+docker-compose --profile test up -d
+
+# Production build
+docker-compose --profile prod build
+docker-compose --profile prod up -d
+```
 
 ## Table of Contents
 
-- [Architecture](#architecture)
-- [Domain-Driven Design](#domain-driven-design)
-  - [Strategic Design](#strategic-design)
-  - [Tactical Design](#tactical-design)
-- [Clean Architecture](#clean-architecture)
-- [Testing](#testing)
-- [GraphQL](#graphql)
-- [Functional Programming](#functional-programming)
-- [Workflow Organization](#workflow-organization)
-- [Semantic Versioning](#semantic-versioning)
-- [Continuous Integration](#continuous-integration)
-- [Continuous Delivery](#continuous-delivery)
-- [Automatic Dependency Update](#automatic-dependency-update)
-- [Backend Best Practices](#backend-best-practices)
-  - [Caching](#caching)
-  - [Data Validation](#data-validation)
-  - [Rate Limiting](#rate-limiting)
-  - [API Versioning](#api-versioning)
+- [NestJS-DDD-DevOps](#nestjs-ddd-devops)
+  - [Stack](#stack)
+  - [Quick Start](#quick-start)
+    - [Prerequisites](#prerequisites)
+    - [Installation](#installation)
+    - [Docker Quick Start](#docker-quick-start)
+  - [Table of Contents](#table-of-contents)
+  - [Architecture](#architecture)
+  - [Authentication](#authentication)
+    - [Multi-Provider Support](#multi-provider-support)
+    - [Keycloak Configuration](#keycloak-configuration)
+    - [Supabase Configuration](#supabase-configuration)
+    - [Using Authentication](#using-authentication)
+  - [Docker Configuration](#docker-configuration)
+  - [Domain-Driven Design](#domain-driven-design)
+    - [Strategic Design](#strategic-design)
+    - [Tactical Design](#tactical-design)
+  - [Clean Architecture](#clean-architecture)
+  - [Testing](#testing)
+  - [GraphQL](#graphql)
+  - [Functional Programming](#functional-programming)
+  - [Workflow Organization](#workflow-organization)
+  - [Semantic Versioning](#semantic-versioning)
+  - [Continuous Integration](#continuous-integration)
+  - [Continuous Delivery](#continuous-delivery)
+  - [Automatic Dependency Update](#automatic-dependency-update)
+  - [Backend Best Practices](#backend-best-practices)
+    - [Caching](#caching)
+    - [Data Validation](#data-validation)
+    - [Rate Limiting](#rate-limiting)
+    - [API Versioning](#api-versioning)
+  - [Environment Variables](#environment-variables)
+  - [Contributors](#contributors)
 
-### Architecture
+## Architecture
+
 [NestJS](https://docs.nestjs.com/) provides a modular architecture that allows the creation of loosely coupled and easily testable components. \
 Although this framework natively supports the development of microservice or event-driven architectures, they will not
 be considered because the purpose of this project is just to create a simple, extensible and ready-to-use application. \
@@ -101,17 +175,225 @@ In [NestJS](https://docs.nestjs.com/), applications typically consists of multip
 A module is a class annotated with the `@Module()` decorator, and it encapsulates a specific domain or feature of the
 application. A module class define providers and inject them into other components leveraging **Dependency Injection**.
 
+### HTTP Adapter: Fastify
+
+This project uses **Fastify** as the HTTP adapter instead of the default Express. Fastify is a fast and low overhead web framework for Node.js that provides:
+
+- **Higher Performance**: Up to 2x faster than Express in many scenarios
+- **Built-in Schema Validation**: JSON Schema validation out of the box
+- **TypeScript Support**: Excellent TypeScript support with type inference
+- **Plugin Architecture**: Extensible through a powerful plugin system
+- **Low Overhead**: Minimal performance impact
+
+The Fastify adapter is configured in `main.ts`:
+
+```typescript
+import { FastifyAdapter, NestFastifyApplication } from '@nestjs/platform-fastify';
+
+const app = await NestFactory.create<NestFastifyApplication>(
+  AppModule,
+  new FastifyAdapter(),
+);
+```
+
+For GraphQL, the project uses `@as-integrations/fastify` to integrate Apollo Server with Fastify.
+
 ---
 
-### Domain-Driven Design
+## Authentication
+
+The project implements a **multi-provider authentication system** that allows you to dynamically select between different authentication providers via environment configuration. This design provides flexibility while maintaining clean architecture principles.
+
+### Multi-Provider Support
+
+The authentication module supports multiple providers:
+
+- **Keycloak**: Enterprise-grade Identity and Access Management
+- **Supabase Auth**: Managed authentication service with PostgreSQL
+
+**Provider Selection:**
+The authentication provider is selected via the `AUTH_PROVIDER` environment variable:
+
+```env
+AUTH_PROVIDER=keycloak  # or 'supabase'
+```
+
+The `AuthModule` uses NestJS `DynamicModule` pattern to load the appropriate provider at runtime:
+
+```typescript
+@Module({
+  imports: [AuthModule.forRoot()], // Dynamically selects provider
+})
+export class AppModule {}
+```
+
+### Keycloak Configuration
+
+**Prerequisites:**
+1. Keycloak server running (local or cloud instance)
+2. Realm created in Keycloak
+3. Client configured with appropriate settings
+
+**Environment Variables:**
+```env
+AUTH_PROVIDER=keycloak
+KEYCLOAK_AUTH_SERVER_URL=https://your-keycloak-instance.com
+KEYCLOAK_REALM=your-realm-name
+KEYCLOAK_CLIENT_ID=your-client-id
+KEYCLOAK_CLIENT_SECRET=your-client-secret
+```
+
+**Keycloak Client Setup:**
+1. Create a new client in Keycloak
+2. Set **Client authentication** to `On`
+3. Enable **Standard flow** and **Direct access grants**
+4. Configure **Valid redirect URIs**: `http://localhost:3000/*`
+5. Copy the **Client Secret** from the Credentials tab
+
+**Usage in Controllers:**
+```typescript
+import { Roles, Unprotected, AuthenticatedUser } from 'nest-keycloak-connect';
+
+@Controller('users')
+export class UserController {
+  @Get('public')
+  @Unprotected()
+  getPublic() {
+    return 'This is public';
+  }
+
+  @Get('protected')
+  @Roles({ roles: ['user'] })
+  getProtected(@AuthenticatedUser() user: any) {
+    return user;
+  }
+
+  @Get('admin')
+  @Roles({ roles: ['admin'] })
+  getAdmin(@AuthenticatedUser() user: any) {
+    return user;
+  }
+}
+```
+
+### Supabase Configuration
+
+**Prerequisites:**
+1. Supabase project created
+2. JWT Secret obtained from Supabase dashboard
+
+**Environment Variables:**
+```env
+AUTH_PROVIDER=supabase
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_JWT_SECRET=your-jwt-secret
+```
+
+**Usage in Controllers:**
+```typescript
+import { PublicApi, AuthRoles, InjectAuthUser } from '@modules/auth/decorators';
+
+@Controller('users')
+export class UserController {
+  @Get('public')
+  @PublicApi()
+  getPublic() {
+    return 'This is public';
+  }
+
+  @Get('protected')
+  @AuthRoles(ApiRole.USER)
+  getProtected(@InjectAuthUser() user: AuthUserDto) {
+    return user;
+  }
+
+  @Get('admin')
+  @AuthRoles(ApiRole.ADMIN)
+  getAdmin(@InjectAuthUser() user: AuthUserDto) {
+    return user;
+  }
+}
+```
+
+### Using Authentication
+
+**Universal Decorators:**
+The project provides universal decorators that work with both providers:
+
+- `@PublicApi()`: Marks an endpoint as publicly accessible
+- `@AuthRoles(...roles)`: Restricts access to specific roles
+- `@InjectAuthUser()`: Injects the authenticated user into the handler
+
+**Example:**
+```typescript
+import { PublicApi, AuthRoles, InjectAuthUser } from '@modules/auth/decorators';
+import { ApiRole } from '@libs/api/api-role.enum';
+
+@Controller('products')
+export class ProductController {
+  @Get()
+  @PublicApi()
+  findAll() {
+    return this.productService.findAll();
+  }
+
+  @Post()
+  @AuthRoles(ApiRole.ADMIN)
+  create(@InjectAuthUser() user: AuthUserDto, @Body() dto: CreateProductDto) {
+    return this.productService.create(dto, user.id);
+  }
+}
+```
+
+**Note:** When using Keycloak, you can also use Keycloak-specific decorators (`@Unprotected()`, `@Roles()`) directly from `nest-keycloak-connect`. The universal decorators provide a consistent API across providers.
+
+---
+
+## Docker Configuration
+
+This project includes a comprehensive Docker setup with multi-stage builds and environment profiles. For detailed documentation, see the [Docker Configuration Guide](./DockerProcedure.md).
+
+### Quick Overview
+
+**Multi-Stage Build:**
+- **Builder Stage**: Compiles TypeScript and installs all dependencies
+- **Production Stage**: Optimized runtime image with only production dependencies
+
+**Environment Profiles:**
+- `dev`: Development environment (port 15432)
+- `test`: Test/E2E environment (port 25432)
+- `qual`: Quality Assurance environment (port 35432)
+- `prod`: Production environment
+
+**Quick Commands:**
+```bash
+# Development
+docker-compose --profile dev up -d
+
+# Test
+docker-compose --profile test up -d
+
+# Production
+docker-compose --profile prod build
+docker-compose --profile prod up -d
+```
+
+For complete Docker documentation, configuration details, troubleshooting, and best practices, refer to [DockerProcedure.md](./DockerProcedure.md).
+
+---
+
+## Domain-Driven Design
+
 _Domain-Driven Design (DDD)_, introduced by _Eric Evans_ in his seminal book [Domain-Driven Design: Tackling Complexity in the Heart of Software](https://www.amazon.com/Domain-Driven-Design-Tackling-Complexity-Software/dp/0321125215), is an approach to software development that focuses on modeling software to match the complex realities of the business domain. It emphasizes collaboration between domain experts and software developers to build a shared understanding of the problem domain and to reflect that understanding in the code.
 
 DDD is structured into two main aspects:
 - **Strategic Design**: focuses on the high-level design of the system, defining boundaries and relationships between different parts of the domain.
 - **Tactical Design**: deals with patterns and building blocks that guide the implementation within the defined boundaries.
 
-#### Strategic Design
-Strategic design provides a big-picture approach to defining how different subdomains interact and how to partition a system into well-defined parts. 
+### Strategic Design
+
+Strategic design provides a big-picture approach to defining how different subdomains interact and how to partition a system into well-defined parts. \
 On this page we will not cover the _Problem Space_, which includes, for example, the identification of subdomains, but we will discuss about how to manage and implement the various _Bounded Contexts_ designed. 
 
 A _Bounded Context_ defines the explicit boundaries in which a particular domain model is defined and applied. Each context has its own domain logic, rules, and language, preventing ambiguity and inconsistencies when working with other contexts. It helps in maintaining clarity and separation of concerns within complex systems.
@@ -142,7 +424,8 @@ Modules can publish domain events using the `Event Emitter` class, allowing othe
 3. **Shared Service**: a shared module can be created to hold common logic and utilities needed across multiple bounded contexts.
 4. **CQRS Pattern**: using the `@nestjs/cqrs package`, commands and queries can be dispatched to other modules following a clear separation of concern.
 
-#### Tactical Design
+### Tactical Design
+
 Tactical design is a set of design patterns and building blocks that we can use in the construction of our Domain Model.\
 These building blocks are built around the _OOP_ and _FP_ techniques and their role is to help to manage complexity and ensure clarity behavior within the domain model.
 
@@ -274,6 +557,7 @@ If you want to deep dive and to understand in detail how this library works, ple
 
 
 ### Clean Architecture
+
 Once the various bounded contexts have been identified and designed, it is necessary to proceed with the internal design of each module. \
 In this context, we will be helped by the principles of **Clean Architecture**, defined by _Robert C. Martin_ in this [article](https://blog.cleancoder.com/uncle-bob/2012/08/13/the-clean-architecture.html).
 
@@ -320,7 +604,8 @@ Accordingly, each module of the application will have the following directory st
 
 ----
 
-### Testing
+## Testing
+
 Testing is an important process in the software development lifecycle. It involves verifying and validating that a software application is free of bugs, meets the technical requirements set by its design and development, and satisfies user requirements efficiently and effectively. 
 
 In this project we will implement two different types of tests:
@@ -364,7 +649,7 @@ _Unit tests_ will be run with this command:
 
 ```bash
 
-npm run test
+pnpm run test
 
 ```
 
@@ -399,14 +684,13 @@ _E2E tests_ will be run with this command:
 
 ```bash
 
-npm run test:e2e
+pnpm run test:e2e
 
 ```
 
 ---
 
-### GraphQL
-
+## GraphQL
 
 GraphQL is a *query language* for APIs that allows clients to request only the data they need. Unlike REST, which relies on fixed endpoints and multiple requests, GraphQL consolidates requests into a single query, reducing network overhead and improving efficiency.
 
@@ -469,15 +753,18 @@ export class UserResolver {
     }
 
 }
-
 ```
+
+**Fastify Integration:**
+This project uses `@as-integrations/fastify` to integrate Apollo Server with Fastify, providing high-performance GraphQL endpoints.
 
 If you want to deep dive and to understand in detail how GraphQL works, please refer to the official [documentation](https://docs.nestjs.com/graphql/quick-start).
 
 
 ---
 
-### Functional Programming
+## Functional Programming
+
 In this section we are going to discuss and to explore some technical choices used in the development of this project related to functional programming.
 
  > Functional programming is a programming paradigm where programs are constructed by applying and composing functions. It is a declarative programming paradigm in which function definitions are trees of expressions that map values to other values, rather than a sequence of imperative statements which update the running state of the program.
@@ -492,7 +779,7 @@ Instead, we will try to apply the following principles belonging to functional p
 - **Higher-Order Functions**: higher-order functions (HOFs) let us write reusable and composable code. They can be used to create reusable abstractions that can simplify complex code and make it easier to understand.
   
 - **Type Safety**: with _TypeScript_, you catch mistakes before they become runtime issues. FP concepts align perfectly with _TypeScript_'s static typing, reducing the chances of passing around undefined or null by accident.
-
+  
 - **Declarativity**: functional programming encourages writing code that focuses on what should happen rather than how it happens. This leads to cleaner, more readable code, which is easier for us to maintain.
 
 To implement and follow all of these FP principles we are going to use the [Effect-TS](https://github.com/Effect-TS/effect) library, which belongs to the [Effect](https://effect.website/) ecosystem. \
@@ -521,7 +808,8 @@ const result = Option.match(program, {
 
 ---
 
-### Workflow Organization
+## Workflow Organization
+
 In order to make the best use of _DevOps_ practices, it is necessary to adopt an appropriate **Workflow Organization**. \
 In this project we are going to use a custom version of the [Gitflow Workflow]( https://www.atlassian.com/git/tutorials/comparing-workflows/gitflow-workflow). \
 Instead of a single `main` branch, this workflow uses two branches to record the history of the project. The `main` branch stores the official release history, and the `develop` branch serves as an integration branch for features. It's also convenient to tag all commits in the main branch with a version number. Each new feature should reside in its own branch, which can be pushed to the central repository for backup/collaboration. But, instead of branching off of main, feature branches use develop as their parent branch. When a feature is complete, it gets merged back into develop. Features should never interact directly with main.
@@ -552,7 +840,8 @@ To define and configure the hooks we are going to use the tool [Lefthook](https:
 
 ---
 
-### Semantic Versioning
+## Semantic Versioning
+
 > Software versioning is the process of assigning either unique version names or unique version numbers to unique states of computer software. Within a given version number category (e.g., major or minor), these numbers are generally assigned in increasing order and correspond to new developments in the software.
 
 Regarding the versioning process, in this project we are going to follow the [Semantic Versioning](https://semver.org/lang/it/) specification. \
@@ -562,7 +851,8 @@ Accordingly, we are going to use the [Semantic-release-bot](https://github.com/s
 
 ---
 
-### Continuous Integration
+## Continuous Integration
+
 One of the fundamental practices of DevOps is _Continuous Integration_. It aims to continuously integrate code with the main line of development so that integration problems are detected early and software quality is improved by enabling a faster and more reliable development process. 
 
 <p style="text-align: center;">
@@ -583,14 +873,15 @@ The [**Release**](https://github.com/andrea-acampora/nestjs-ddd-devops/blob/main
 
 ---
 
-### Continuous Delivery
+## Continuous Delivery
+
 Continuous Delivery (CD) is a software development practice that enables teams to release new features, updates, and bug fixes to production environments rapidly, reliably, and sustainably. The primary goal of CD is to minimize the time between writing code and delivering it to users, while ensuring high quality and stability. \
 In this project, the **Continuous Delivery** workflow is built using **GitHub Actions** and **Docker**, and it runs on a _Continuous Integration_ environment. \
 The [workflow](https://github.com/andrea-acampora/nestjs-ddd-devops/blob/main/.github/workflows/delivery.yml) is realized in the following way:
 
 1. **Automated Workflow with GitHub Actions**: the workflow is triggered automatically when a successful `Release` job is completed, ensuring only tested and verified code gets delivered. We use conditional execution to ensure that deployment only happens if the previous workflow (Release) succeeds.
 2. **Versioning**: we extract version tags using `git describe --tags --abbrev=0`, making sure each _Docker_ image is tagged correctly. This approach makes rollback, tracking, and auditing deployments very easy.
-3. **Docker Containerization**: we build the _Docker_ image of the application using a custom `Dockerfile`. The Dockerfile follows best practices by installing dependencies, running the build, and handling migrations and database schema creation on startup.
+3. **Docker Containerization**: we build the _Docker_ image of the application using a custom `Dockerfile` with multi-stage builds. The Dockerfile follows best practices by installing dependencies, running the build, and handling migrations and database schema creation on startup. For detailed Docker configuration, see [Docker Configuration Guide](./DockerProcedure.md).
 4. **Deployment to GitHub Container Registry (GHCR)**: we securely log in to GHCR using secrets, ensuring that credentials stay protected. Then we tag both `versioned` and `latest` container images to allows flexibility and rollback strategies.
 
 At the end of the workflow, if all the steps are successful, we can find the docker image of the application on [GitHub Packages](https://github.com/andrea-acampora?tab=packages&repo_name=nestjs-ddd-devops). \
@@ -602,27 +893,33 @@ docker run -p 3000:3000 --env-file .env ghcr.io/andrea-acampora/nestjs-ddd-devop
 
 Remember that you need to provide a `.env` file with all database connection variables. Alternatively, you can create a `docker-compose` file with a _PostgreSQL_ service and a service containing the image you just created so that the app and database can communicate via an internal network.
 
+For comprehensive Docker setup with multi-stage builds, environment profiles, and best practices, refer to the [Docker Configuration Guide](./DockerProcedure.md).
+
 ---
 
-### Automatic Dependency Update
+## Automatic Dependency Update
+
 Keeping dependencies current is one of the most effective security methods available, since it prevents vulnerabilities from entering the code base at the outset. Updating dependencies is a complex task that takes time and often introduces technical debt.
-Especially in a complex dependency tree, it’s difficult to even know what libraries or packages are out of date. Manually looking for updates is time-consuming and unrewarding work. Moreover, updates may not always be compatible with existing code, and without total confidence in merging an update, developers worry that an update will break their app.
+Especially in a complex dependency tree, it's difficult to even know what libraries or packages are out of date. Manually looking for updates is time-consuming and unrewarding work. Moreover, updates may not always be compatible with existing code, and without total confidence in merging an update, developers worry that an update will break their app.
 
 In order to automate the update of the project `dependencies`, we are going to use the [Renovate](https://www.mend.io/renovate/) bot. \
 This bot will reduce risk, improve code quality, and cut technical debt by automatically ensuring all dependencies are kept up to date. To do this, the bot will open a new `pull request` on a dedicated `branch` every time it detects a dependency update. This will trigger the running of all Unit and E2E tests in Continuous Integration and if everything is fine then the PR will be automatically merged into the base branch.
 
 ---
 
-### Backend Best Practices
+## Backend Best Practices
+
 In this section we will discuss some common backend best practices that we will use in this project. Most of them are directly supported by [NestJS](https://docs.nestjs.com/) while others will need a custom implementation.
 
 ### Caching
+
 As reported in the offical [NestJS](https://docs.nestjs.com/) documentation, _Caching_ is a powerful and straightforward technique for enhancing application's performance. By acting as a temporary storage layer, it allows for quicker access to frequently used data, reducing the need to repeatedly fetch or compute the same information. This results in faster response times and improved overall efficiency. \
 In this project, we will use the `@nestjs/cache-manager` package along with the `cache-manager` package. By default, with these packages use a `in-memory` strategy so everything is stored in the memory of the application.
 In this way, if the project grows, it will be possible to use an advanced solution and a dedicated database such as [Redis](https://redis.io/) as it is fully supported by the `@nestjs/cache-manager`. \
 If you want to deep dive and to understand in detail how this tool works, please refer to the official [documentation](https://docs.nestjs.com/techniques/caching#caching).
 
 ### Data Validation
+
 Data validation is one of the most crucial steps in building a robust backend system ensuring data flowing through the system is accurate, consistent, and adheres to predefined formats. By introducing data validation invalid or malicious data gets filtered out before it can impact your system.\
 In this project, to implement data validation we will use `class-validator` and `class-transformer` packages.
 
@@ -659,6 +956,7 @@ export class CreateUserDto {
 If you want to deep dive and to understand in detail how this tool works, please refer to the official [documentation](https://docs.nestjs.com/techniques/validation).
 
 ### Rate Limiting
+
 Rate limiting is a set of measures put in place to help ensure the stability and performance of an API system. It works by setting limits on how many requests can be made within a certain period of time — usually a few seconds or minutes — and what actions can be taken.
 If too many requests are made over that period, the API system will return an error message telling you that the rate limit has been exceeded.
 Additionally, rate limiting can help prevent attacks that aim to overwhelm the system, such as DoS attacks, brute force attempts, and API abuse. and also can help businesses save on costs associated with managing an API system.
@@ -676,7 +974,6 @@ In this project we will use the `@nestjs/throttler` package.
   ],
 })
 export class AppModule {}
-
 ```
 
 With this configuration we set a maximum of 100 requests per IP address in a 60-seconds interval.
@@ -684,7 +981,8 @@ With this configuration we set a maximum of 100 requests per IP address in a 60-
 If you want to deep dive and to understand in detail how this tool works, please refer to the official [documentation](https://docs.nestjs.com/security/rate-limiting).
 
 ### API Versioning
-API versioning is the practice of transparently managing changes to your API. You should version your API whenever you make a change that will require consumers to modify their codebase in order to continue using the API. This type of change is known as a “breaking change,” and it can be made to an API's input and output data structures, success and error feedback, and security mechanisms. \
+
+API versioning is the practice of transparently managing changes to your API. You should version your API whenever you make a change that will require consumers to modify their codebase in order to continue using the API. This type of change is known as a "breaking change," and it can be made to an API's input and output data structures, success and error feedback, and security mechanisms. \
 There are several approaches to API versioning, including:
 
 - **URI Versioning**
@@ -707,6 +1005,64 @@ The version in the URI will be automatically prefixed with `v` by default, howev
 In addition to the global configuration, it is also possible to specify the version of individual routes or controllers. In this case, this version will override any other version that would affect the route.
 
 If you want to deep dive and to understand in detail how this tool works, please refer to the official [documentation](https://docs.nestjs.com/techniques/versioning).
+
+---
+
+## Environment Variables
+
+The project requires several environment variables for configuration. Create a `.env` file in the root directory with the following variables:
+
+### Database Configuration
+
+```env
+DATABASE_HOST=127.0.0.1
+DATABASE_PORT=15432
+DATABASE_NAME=db-dev
+DATABASE_USER=postgres
+DATABASE_PASSWORD=postgres
+```
+
+### Authentication Provider
+
+```env
+# Select authentication provider: 'keycloak' or 'supabase'
+AUTH_PROVIDER=keycloak
+```
+
+### Keycloak Configuration (if AUTH_PROVIDER=keycloak)
+
+```env
+KEYCLOAK_AUTH_SERVER_URL=https://your-keycloak-instance.com
+KEYCLOAK_REALM=your-realm-name
+KEYCLOAK_CLIENT_ID=your-client-id
+KEYCLOAK_CLIENT_SECRET=your-client-secret
+```
+
+### Supabase Configuration (if AUTH_PROVIDER=supabase)
+
+```env
+SUPABASE_URL=https://your-project.supabase.co
+SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_JWT_SECRET=your-jwt-secret
+```
+
+### Application Configuration
+
+```env
+PORT=3000
+NODE_ENV=development
+```
+
+### Environment-Specific Configuration
+
+| Environment | DATABASE_PORT | DATABASE_NAME | NODE_ENV |
+|-------------|---------------|---------------|----------|
+| Development | 15432 | db-dev | development |
+| Test | 25432 | db-test-e2e | test |
+| QA | 35432 | db-qual | production |
+| Production | Variable | Variable | production |
+
+**Note:** For production, use a secrets manager (AWS Secrets Manager, HashiCorp Vault, etc.) instead of `.env` files.
 
 ---
 
