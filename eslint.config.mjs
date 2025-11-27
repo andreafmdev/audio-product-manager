@@ -11,11 +11,25 @@ const compat = new FlatCompat({
 });
 
 export default [
+  {
+    ignores: [
+      'node_modules/**',
+      'dist/**',
+      '*.js',
+      'test/**',
+      'coverage/**',
+      '*.config.js',
+      '*.config.mjs',
+    ],
+  },
   ...compat.extends(
     'plugin:@typescript-eslint/recommended',
     'plugin:prettier/recommended',
   ),
+  
   {
+    files: ['src/**/*.{ts,tsx}'],
+
     plugins: {
       '@typescript-eslint': typescriptEslintEslintPlugin,
     },

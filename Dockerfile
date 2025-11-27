@@ -4,13 +4,13 @@ WORKDIR /app
 
 COPY package*.json ./
 
-RUN npm ci --ignore-scripts
+RUN pnpm ci --ignore-scripts
 
 COPY . .
 
 ENV NODE_ENV=production
 
-RUN npm run build
+RUN pnpm run build
 
 EXPOSE 3000
 

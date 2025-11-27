@@ -1,9 +1,9 @@
 pre-commit:
   parallel: true
   jobs:
-    - run: npm run lint
-      glob: "*"
-    - run: npm run test
+    - run: pnpm run lint
+      glob: "src/**/*.{ts,tsx}"
+    - run: pnpm run test
       glob: "*"
 commit-msg:
   scripts:
