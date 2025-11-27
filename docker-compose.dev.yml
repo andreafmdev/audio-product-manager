@@ -7,6 +7,7 @@ version: '3.8'
 
 services:
   app-dev:
+   
     # Override del comando per sviluppo con hot-reload
     # Best practice: usa start:dev per watch mode in sviluppo
     command: pnpm run start:dev

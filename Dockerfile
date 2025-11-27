@@ -23,8 +23,9 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 
 # Installa tutte le dipendenze (dev + prod)
 # --frozen-lockfile: garantisce che il lockfile sia rispettato
-# --ignore-scripts: evita l'esecuzione di script potenzialmente problematici durante il build
-RUN pnpm ci --frozen-lockfile --ignore-scripts
+# --ignore-scripts: disabilita script npm/pnpm (evita lefthook install che richiede git)
+# Best practice: in Docker non servono git hooks, quindi disabilitiamo gli script
+RUN pnpm install --frozen-lockfile --ignore-scripts
 
 # Copia il resto del codice sorgente
 # Best practice: copia il codice dopo le dipendenze per ottimizzare la cache
@@ -50,9 +51,11 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 COPY package.json pnpm-lock.yaml* ./
 
 # Installa SOLO le dipendenze di produzione
-# Best practice: --prod installa solo dependencies, non devDependencies
-# Questo riduce significativamente la dimensione dell'immagine finale
-RUN pnpm ci --frozen-lockfile --prod --ignore-scripts
+# --prod: installa solo dependencies, non devDependencies
+# --frozen-lockfile: rispetta il lockfile
+# --ignore-scripts: disabilita script (non servono in produzione)
+# Best practice: questo riduce significativamente la dimensione dell'immagine finale
+RUN pnpm install --prod --frozen-lockfile --ignore-scripts
 
 # Copia i file compilati dallo stage builder
 # Best practice: copia solo ciò che è necessario per il runtime
@@ -73,4 +76,4 @@ EXPOSE 3000
 # Comando di avvio dell'applicazione
 # Esegue migrazioni e schema update prima di avviare l'app
 # Best practice: usa array syntax per evitare problemi con shell
-CMD ["sh", "-c", "pnpm run schema:update && pnpm run migrate:up && pnpm run start:prod"]
+CMD ["sh", "-c", "pnpm run migrate:up && pnpm run start:prod"]
