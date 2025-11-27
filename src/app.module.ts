@@ -23,7 +23,11 @@ import { AuthModule } from './modules/auth/auth.module';
     }),
     ConfigModule.forRoot({
       isGlobal: true,
-      envFilePath: ['.env'],
+      // load the correct .env file based on NODE_ENV or ENVIRONMENT variable
+      envFilePath: [
+        `.env.${process.env.ENVIRONMENT || process.env.NODE_ENV || 'local'}`,
+        '.env', // fallback
+      ],
     }),
     MikroOrmModule.forRootAsync({
       imports: [ConfigModule],
