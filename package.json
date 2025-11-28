@@ -21,7 +21,7 @@
     "migrate:down": "pnpm run build && npx mikro-orm migration:down --config --config src/config/database/mikro-orm.config.ts"
   },
   "dependencies": {
-    "@apollo/server": "^5.2.0",
+    "@apollo/server": "^4.12.2",
     "@as-integrations/fastify": "^2.1.1",
     "@eslint/eslintrc": "^3.2.0",
     "@fastify/compress": "^8.0.1",
