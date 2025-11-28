@@ -6,7 +6,8 @@ import {
   HttpHealthIndicator,
   MikroOrmHealthIndicator,
 } from '@nestjs/terminus';
-import { PublicApi } from '../../../../../libs/decorator/auth.decorator';
+import { Unprotected } from 'nest-keycloak-connect';
+import { platform } from 'os';
 
 @Controller({
   path: 'health',
@@ -19,15 +20,22 @@ export class HealthController {
     private readonly disk: DiskHealthIndicator,
   ) {}
 
-  @PublicApi()
+  @Unprotected()
   @Get()
   @HealthCheck()
   check() {
+    // Determina il percorso root in base al sistema operativo
+    const rootPath =
+      platform() === 'win32' ? process.cwd().split('\\')[0] + '\\' : '/';
+
     return this.health.check([
       () => this.http.pingCheck('external-connectivity', 'https://google.com'),
       () => this.db.pingCheck('database'),
       () =>
-        this.disk.checkStorage('storage', { path: '/', thresholdPercent: 0.8 }),
+        this.disk.checkStorage('storage', {
+          path: rootPath,
+          thresholdPercent: 0.8,
+        }),
     ]);
   }
 }

@@ -13,7 +13,7 @@ export class SupabaseAuthGuard extends AuthGuard('supabase') {
   canActivate(
     context: ExecutionContext,
   ): boolean | Promise<boolean> | Observable<boolean> {
-    // Check se la route è pubblica
+    // Controlla se la route è pubblica
     const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_API, [
       context.getHandler(),
       context.getClass(),
@@ -23,6 +23,7 @@ export class SupabaseAuthGuard extends AuthGuard('supabase') {
       return true;
     }
 
+    // Altrimenti usa il guard nativo di Passport
     return super.canActivate(context);
   }
 }

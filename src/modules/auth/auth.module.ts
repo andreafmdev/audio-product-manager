@@ -11,8 +11,8 @@ import {
 import { KeycloakConfigService } from './infrastructure/keycloak/keycloak-config.service';
 import { SupabaseStrategy } from './strategies/supabase.strategy';
 import { SupabaseAuthGuard } from './guards/supabase-auth.guard';
-import { AuthProvider } from './providers/auth-provider.enum';
 import { SupabaseRoleGuard } from './guards/supabase-role.guard';
+import { AuthProvider } from './providers/auth-provider.enum';
 
 @Global()
 @Module({})
@@ -20,8 +20,6 @@ export class AuthModule {
   private static readonly logger = new Logger(AuthModule.name);
 
   static forRoot(): DynamicModule {
-    // Usa process.env perché questo metodo è statico e viene chiamato prima dell'inizializzazione
-    // La validazione è già gestita da Joi nello schema di validazione
     const provider =
       (process.env.AUTH_PROVIDER as AuthProvider) || AuthProvider.KEYCLOAK;
 
@@ -53,11 +51,11 @@ export class AuthModule {
         KeycloakConfigService,
         {
           provide: APP_GUARD,
-          useClass: KeycloakAuthGuard,
+          useClass: KeycloakAuthGuard, // ← Guard nativo Keycloak
         },
         {
           provide: APP_GUARD,
-          useClass: KeycloakRoleGuard,
+          useClass: KeycloakRoleGuard, // ← Guard nativo Keycloak
         },
       ],
       exports: [],
@@ -75,11 +73,11 @@ export class AuthModule {
         SupabaseStrategy,
         {
           provide: APP_GUARD,
-          useClass: SupabaseAuthGuard,
+          useClass: SupabaseAuthGuard, // ← Guard custom Supabase (estende Passport nativo)
         },
         {
           provide: APP_GUARD,
-          useClass: SupabaseRoleGuard,
+          useClass: SupabaseRoleGuard, // ← Guard custom Supabase (semplice)
         },
       ],
       exports: [],

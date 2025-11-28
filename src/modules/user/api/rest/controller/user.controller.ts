@@ -25,7 +25,16 @@ import { QueryParams } from '../../../../../libs/decorator/query-params.decorato
 import { QueryParamsValidationPipe } from '../../../../../libs/pipe/query-params-validation.pipe';
 import { Collection } from '../../../../../libs/api/rest/collection.interface';
 import { User } from '../../../domain/entity/user.entity';
+import {
+  ApiTags,
+  ApiOperation,
+  ApiResponse,
+  ApiBody,
+  ApiBearerAuth,
+  ApiQuery,
+} from '@nestjs/swagger';
 
+@ApiTags('users')
 @Controller('users')
 export class UserController {
   constructor(
@@ -36,6 +45,29 @@ export class UserController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @AuthRoles(ApiRole.ADMIN)
   @Post()
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Create user',
+    description:
+      'Crea un nuovo utente con ruolo USER. Richiede autenticazione ADMIN.',
+  })
+  @ApiBody({ type: CreateUserBody })
+  @ApiResponse({
+    status: 204,
+    description: 'Utente creato con successo',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Dati di input non validi',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Non autenticato',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Permessi insufficienti (richiede ruolo ADMIN)',
+  })
   async createUser(@Body() body: CreateUserBody) {
     getOrThrowWith(
       await this.commandBus.execute(
@@ -48,6 +80,29 @@ export class UserController {
   @HttpCode(HttpStatus.NO_CONTENT)
   @AuthRoles(ApiRole.ADMIN)
   @Post('/admin')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Create admin user',
+    description:
+      'Crea un nuovo utente con ruolo ADMIN. Richiede autenticazione ADMIN.',
+  })
+  @ApiBody({ type: CreateUserBody })
+  @ApiResponse({
+    status: 204,
+    description: 'Admin creato con successo',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Dati di input non validi',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Non autenticato',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Permessi insufficienti (richiede ruolo ADMIN)',
+  })
   async createAdminUser(@Body() body: CreateUserBody) {
     getOrThrowWith(
       await this.commandBus.execute(
@@ -59,6 +114,36 @@ export class UserController {
 
   @AuthRoles(ApiRole.ADMIN)
   @Get()
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({
+    summary: 'Get all users',
+    description:
+      'Recupera la lista paginata di tutti gli utenti. Richiede autenticazione ADMIN.',
+  })
+  @ApiQuery({
+    name: 'offset',
+    required: false,
+    type: Number,
+    description: 'Numero di record da saltare (default: 0)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Numero massimo di record da restituire (default: 10)',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Lista utenti recuperata con successo',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Non autenticato',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Permessi insufficienti (richiede ruolo ADMIN)',
+  })
   async getUsers(
     @QueryParams(new QueryParamsValidationPipe()) params: UserParams,
   ): Promise<PaginatedResponse<UserDto>> {

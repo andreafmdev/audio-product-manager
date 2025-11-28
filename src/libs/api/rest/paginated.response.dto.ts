@@ -6,7 +6,6 @@ export interface PaginatedResponse<E> {
   readonly limit: number;
   readonly total: number;
 }
-
 export const toPaginatedResponse = <E>(
   data: Collection<E>,
   offset: number,

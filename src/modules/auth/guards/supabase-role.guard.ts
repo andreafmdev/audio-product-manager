@@ -19,12 +19,10 @@ export class SupabaseRoleGuard implements CanActivate {
       [context.getHandler(), context.getClass()],
     );
 
-    // Se non ci sono ruoli richiesti, permettere l'accesso
     if (!requiredRoles || requiredRoles.length === 0) {
       return true;
     }
 
-    // Estrai l'utente dalla request
     const request = context.switchToHttp().getRequest();
     const user: AuthUserDto | undefined = request.user;
 
@@ -32,10 +30,7 @@ export class SupabaseRoleGuard implements CanActivate {
       throw new ForbiddenException('User not authenticated');
     }
 
-    // Mappa il ruolo stringa a ApiRole enum
     const userRole = this.mapRoleToApiRole(user.role);
-
-    // Verifica se l'utente ha uno dei ruoli richiesti
     const hasRole = requiredRoles.includes(userRole);
 
     if (!hasRole) {
@@ -49,11 +44,9 @@ export class SupabaseRoleGuard implements CanActivate {
 
   private mapRoleToApiRole(role: string): ApiRole {
     const roleUpper = role.toUpperCase();
-
     if (roleUpper === 'ADMIN' || roleUpper === '0') {
       return ApiRole.ADMIN;
     }
-
     return ApiRole.USER;
   }
 }

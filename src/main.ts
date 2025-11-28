@@ -60,19 +60,25 @@ async function bootstrap() {
       .setTitle('NestJS DDD DevOps API')
       .setDescription('API documentation for NestJS DDD DevOps project')
       .setVersion('1.0')
+      .setContact(
+        'Your Name',
+        'https://yourwebsite.com',
+        'your.email@example.com',
+      )
+      .addServer('http://localhost:3000', 'Development server')
       .addBearerAuth(
         {
           type: 'http',
           scheme: 'bearer',
           bearerFormat: 'JWT',
           name: 'JWT',
-          description: 'Enter JWT token',
+          description: 'Enter JWT token from Keycloak or Supabase',
           in: 'header',
         },
-        'JWT-auth',
+        'JWT-auth', // Questo nome viene usato con @ApiBearerAuth('JWT-auth')
       )
-      .addTag('health', 'Health check endpoints')
-      .addTag('users', 'User management endpoints')
+      .addTag('Health', 'Health check endpoints')
+      .addTag('Users', 'User management endpoints')
       .build();
 
     const document = SwaggerModule.createDocument(app, config);
@@ -80,6 +86,11 @@ async function bootstrap() {
       customSiteTitle: 'API Documentation',
       customfavIcon: 'https://nestjs.com/img/logo-small.svg',
       customCss: '.swagger-ui .topbar { display: none }',
+      swaggerOptions: {
+        persistAuthorization: true, // Mantiene il token tra i refresh
+        tagsSorter: 'alpha', // Ordina i tag alfabeticamente
+        operationsSorter: 'alpha', // Ordina gli endpoint alfabeticamente
+      },
     });
   }
 
