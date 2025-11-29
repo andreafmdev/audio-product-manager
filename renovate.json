@@ -61,12 +61,6 @@
     ],
     "ignorePaths": [
         "package-lock.json"
-    ],
-    
-    "npm": {
-        "enabled": false
-    },
-    "pnpm": {
-        "enabled": true
-    }
+    ]
+  
 }
