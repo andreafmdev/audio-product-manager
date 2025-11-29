@@ -31,18 +31,18 @@ jobs:
         ports:
           - 5432:5432
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           submodules: recursive
           fetch-depth: 0
       - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v6
         with:
           node-version: ${{ matrix.node-version }}
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 10.7.0
+          version: 10.24.0
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
       - name: Check style

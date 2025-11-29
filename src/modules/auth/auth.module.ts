@@ -20,8 +20,20 @@ export class AuthModule {
   private static readonly logger = new Logger(AuthModule.name);
 
   static forRoot(): DynamicModule {
-    const provider =
-      (process.env.AUTH_PROVIDER as AuthProvider) || AuthProvider.KEYCLOAK;
+    const provider = process.env.AUTH_PROVIDER as AuthProvider | undefined;
+
+    // Se non c'è provider configurato, nessuna autenticazione (template-friendly)
+    if (!provider || provider.trim() === '') {
+      this.logger.warn(
+        'No AUTH_PROVIDER configured. Authentication is disabled.',
+      );
+      return {
+        module: AuthModule,
+        imports: [],
+        providers: [],
+        exports: [],
+      };
+    }
 
     this.logger.log(`Initializing AuthModule with provider: ${provider}`);
 

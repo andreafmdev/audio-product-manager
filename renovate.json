@@ -22,9 +22,15 @@
                 "devDependencies"
             ],
             "automerge": true
+        },
+        {
+            "matchPackageNames": ["nest-keycloak-connect"],
+            "enabled": false
         }
     ],
-    "baseBranches": ["develop"],
+    "baseBranches": [
+        "develop"
+    ],
     "dependencyDashboard": true,
     "automerge": true,
     "automergeType": "pr",
@@ -48,5 +54,20 @@
     "prHourlyLimit": 0,
     "separateMajorMinor": true,
     "separateMinorPatch": true,
-    "separateMultipleMajor": true
+    "separateMultipleMajor": true,
+    
+    "npmrc": "package-manager=pnpm",
+    "postUpdateOptions": [
+        "pnpmDedupe"
+    ],
+    "ignorePaths": [
+        "package-lock.json"
+    ],
+    
+    "npm": {
+        "enabled": false
+    },
+    "pnpm": {
+        "enabled": true
+    }
 }

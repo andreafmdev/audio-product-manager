@@ -8,52 +8,27 @@ export const validationSchema = Joi.object({
   ENVIRONMENT: Joi.string().valid('local', 'qual', 'reg', 'prod').optional(),
   PORT: Joi.number().default(3000),
 
-  // Database
+  // Database (sempre richiesto)
   DATABASE_HOST: Joi.string().required(),
   DATABASE_PORT: Joi.number().required(),
   DATABASE_NAME: Joi.string().required(),
   DATABASE_USER: Joi.string().required(),
   DATABASE_PASSWORD: Joi.string().required(),
 
-  // Auth Provider
-  AUTH_PROVIDER: Joi.string().valid('keycloak', 'supabase').default('keycloak'),
+  // Auth Provider (opzionale - nessun default)
+  AUTH_PROVIDER: Joi.string()
+    .valid('keycloak', 'supabase')
+    .optional()
+    .allow(null, ''),
 
-  // Keycloak (required if AUTH_PROVIDER=keycloak)
-  KEYCLOAK_AUTH_SERVER_URL: Joi.string().when('AUTH_PROVIDER', {
-    is: 'keycloak',
-    then: Joi.required(),
-    otherwise: Joi.optional(),
-  }),
-  KEYCLOAK_REALM: Joi.string().when('AUTH_PROVIDER', {
-    is: 'keycloak',
-    then: Joi.required(),
-    otherwise: Joi.optional(),
-  }),
-  KEYCLOAK_CLIENT_ID: Joi.string().when('AUTH_PROVIDER', {
-    is: 'keycloak',
-    then: Joi.required(),
-    otherwise: Joi.optional(),
-  }),
-  KEYCLOAK_CLIENT_SECRET: Joi.string().when('AUTH_PROVIDER', {
-    is: 'keycloak',
-    then: Joi.required(),
-    otherwise: Joi.optional(),
-  }),
+  // Keycloak (completamente opzionale)
+  KEYCLOAK_AUTH_SERVER_URL: Joi.string().optional().allow(''),
+  KEYCLOAK_REALM: Joi.string().optional().allow(''),
+  KEYCLOAK_CLIENT_ID: Joi.string().optional().allow(''),
+  KEYCLOAK_CLIENT_SECRET: Joi.string().optional().allow(''),
 
-  // Supabase (required if AUTH_PROVIDER=supabase)
-  SUPABASE_URL: Joi.string().when('AUTH_PROVIDER', {
-    is: 'supabase',
-    then: Joi.required(),
-    otherwise: Joi.optional(),
-  }),
-  SUPABASE_ANON_KEY: Joi.string().when('AUTH_PROVIDER', {
-    is: 'supabase',
-    then: Joi.required(),
-    otherwise: Joi.optional(),
-  }),
-  SUPABASE_JWT_SECRET: Joi.string().when('AUTH_PROVIDER', {
-    is: 'supabase',
-    then: Joi.required(),
-    otherwise: Joi.optional(),
-  }),
+  // Supabase (completamente opzionale)
+  SUPABASE_URL: Joi.string().optional().allow(''),
+  SUPABASE_ANON_KEY: Joi.string().optional().allow(''),
+  SUPABASE_JWT_SECRET: Joi.string().optional().allow(''),
 });
