@@ -56,7 +56,6 @@
     "separateMinorPatch": true,
     "separateMultipleMajor": true,
     
-    "npmrc": "package-manager=pnpm",
     "postUpdateOptions": [
         "pnpmDedupe"
     ],
